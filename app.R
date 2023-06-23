@@ -183,28 +183,48 @@ server <- function(input, output, session) {
       numericInput("answer_input", "Your Answer:", value = NULL),
       actionButton("next_button", "Next"),
       tags$script(HTML('
-        setTimeout(function() {
-          document.getElementById("answer_input").focus();
-        }, 0);
-
-        $("#answer_input").on("keydown", function(event) {
-          if (event.which == 13) {
-            event.preventDefault();
-            var answerValue = parseInt($("#answer_input").val(), 10);
-            Shiny.setInputValue("next_button", answerValue, {priority: "event"});
-          }
-        });
+          setTimeout(function() {
+            document.getElementById("answer_input").focus();
+          }, 0);
+          
+            $("#answer_input").on("keyup", function(event) {
+                if (event.which == 13) {
+                    event.preventDefault();
+                    setTimeout(function() {
+                      $("#next_button").click();
+                    }, 0);
+                  }
+            });
       '))
     )
   })
   
   observeEvent(input$next_button, {
     question <- questions()[[current_question()]]
-    answer <- input$answer_input
+    answer <- as.numeric(input$answer_input)
+    
+    # Code chunk below for debugging only
+    # if (!is.na(answer)) {
+    #   if (answer == question$answer) {
+    #     correct_answers(correct_answers() + 1)
+    #     showModal(modalDialog(
+    #       title = "Correct!",
+    #       "Your answer is correct.",
+    #       footer = modalButton("Close")
+    #     ))
+    #   } else {
+    #     showModal(modalDialog(
+    #       title = "Incorrect",
+    #       paste("Your answer is incorrect. The correct answer is", question$answer),
+    #       footer = modalButton("Close")
+    #     ))
+    #   }
+    # }
     
     if (!is.na(answer)) {
-      if (as.integer(answer) == question$answer)
+      if (answer == question$answer) {
         correct_answers(correct_answers() + 1)
+      }
     }
     
     if (current_question() < input$num_questions) {
@@ -282,8 +302,6 @@ generateQuestions <- function(num_questions, difficulty, operations) {
     operators <- c(operators, "%/%")
   }
   
-  # print(operators)
-  
   for (i in 1:num_questions) {
     
     x <- sample(sample_values[[1]], 1)
@@ -301,7 +319,6 @@ generateQuestions <- function(num_questions, difficulty, operations) {
       answer <- x %/% y
     }
     
-    # print(answer)
     expression <- paste(x, operator, y, "=", sep = " ")
     
     questions[[i]] <- list(expression = expression, answer = answer)
